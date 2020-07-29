@@ -1,6 +1,6 @@
 # Zubr MM Bot
 
-Uses [Zubr WebSocket API](https://spec.zubr.io/#websocket-api) for market making. Reads orderbook in real time and plases orders between the best bid and ask.
+Uses [Zubr WebSocket API](https://spec.zubr.io/#websocket-api) for market making. Reads order book in real-time and place orders between the best bid and ask.
 
 ## Install
 

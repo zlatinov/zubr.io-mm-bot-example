@@ -28,7 +28,8 @@ var state = {
         processedOrders: {},
         orders: {},
         ordersSent: false
-    }
+    },
+    lastPrintInfo: 0
 }
 
 async function loadConfig() {
