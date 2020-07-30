@@ -14,6 +14,7 @@ const {
     RPC_CHANNEL_ORDERS,
     RPC_CHANNEL_ORDERBOOK,
 } = require('./constants.js');
+const logger = require('./lib/logger.js');
 
 var ws
 var config = {}
@@ -108,7 +109,7 @@ async function main() {
                 // Monitor the orders changes
                 zubr.subscribe(RPC_CHANNEL_ORDERS, bot.readOrders)
 
-                initExitHandlers(bot)
+                initExitHandlers(logger, bot)
 
                 return
             }
@@ -155,8 +156,14 @@ async function main() {
 }
 
 // On bot exit stop sending new orders and cancel all open order
-function initExitHandlers(bot) {
+function initExitHandlers(logger, bot) {
     function exitHandler(signal, code) {
+        if (code == 'uncaughtException') {
+            console.log(signal)
+
+            logger.error(signal)
+        }
+
         state.stopTrading = true
 
         const cancellationPromise = bot.cancelAllOrders()
