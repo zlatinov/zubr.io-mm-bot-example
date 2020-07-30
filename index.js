@@ -29,7 +29,8 @@ var state = {
         orders: {},
         ordersSent: false
     },
-    lastPrintInfo: 0
+    lastPrintInfo: 0,
+    stopTrading: false
 }
 
 async function loadConfig() {
@@ -107,6 +108,8 @@ async function main() {
                 // Monitor the orders changes
                 zubr.subscribe(RPC_CHANNEL_ORDERS, bot.readOrders)
 
+                initExitHandlers(bot)
+
                 return
             }
 
@@ -149,6 +152,32 @@ async function main() {
             return
         }
     })
+}
+
+// On bot exit stop sending new orders and cancel all open order
+function initExitHandlers(bot) {
+    function exitHandler(signal, code) {
+        state.stopTrading = true
+
+        const cancellationPromise = bot.cancelAllOrders()
+        if (cancellationPromise) {
+            cancellationPromise.then(function () {
+                process.exit(code)
+            })
+        } else {
+            process.exit(code)
+        }
+    }
+
+    // Catches ctrl+c event
+    process.on('SIGINT', exitHandler);
+
+    // Catches "kill pid"
+    process.on('SIGUSR1', exitHandler);
+    process.on('SIGUSR2', exitHandler);
+
+    // Catches uncaught exceptions
+    process.on('uncaughtException', exitHandler);
 }
 
 main()
