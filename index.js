@@ -14,7 +14,6 @@ const {
     RPC_CHANNEL_ORDERS,
     RPC_CHANNEL_ORDERBOOK,
 } = require('./constants.js');
-const logger = require('./lib/logger.js');
 
 var ws
 var config = {}
