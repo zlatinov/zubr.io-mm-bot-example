@@ -1,6 +1,6 @@
 {
   "name": "zubr.io-mm-bot-example",
-  "version": "0.0.10",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,6 +8,9 @@
   },
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "dependencies": {
     "mathjs": "^7.1.0",
     "ws": "^7.3.1"

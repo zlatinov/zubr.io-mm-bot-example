@@ -4,6 +4,8 @@ Uses [Zubr WebSocket API](https://spec.zubr.io/#websocket-api) for market making
 
 ## Install
 
+The bot requires Node.JS version 10 or above.
+
  `npm install`
 
 ## Config
