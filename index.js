@@ -9,10 +9,8 @@ const {
     WS_URL_LIVE,
     WS_ORIGIN_LIVE,
     WS_USER_AGENT,
-    RPC_CHANNEL_INSTRUMENTS,
     RPC_CHANNEL_POSITIONS,
-    RPC_CHANNEL_ORDERS,
-    RPC_CHANNEL_ORDERBOOK,
+    RPC_CHANNEL_INSTRUMENTS
 } = require('./constants.js');
 
 var ws
@@ -24,13 +22,16 @@ var state = {
     exchange: {
         minPriceIncrement: 0,
         positionSize: 0,
+        positionSizeExchange: 0,
         initOrders: false,
+        initBook: false,
         processedOrders: {},
         orders: {},
-        ordersSent: false
+        ordersSent: false,
+        readPositionInit: false,
     },
     lastPrintInfo: 0,
-    stopTrading: false
+    stopTrading: true
 }
 
 async function loadConfig() {
@@ -87,26 +88,22 @@ async function main() {
             if (data.tag === 'ok') {
                 logger.info('Authorized successfully')
 
-                // Read instrument information which will be used by the bot
-                zubr.subscribe(RPC_CHANNEL_INSTRUMENTS, bot.readInstruments)
-
                 /**
                  * Get the initial position from the exchange or from the config, based on settings
-                 * Subscribe to the orderbook changes only after the initial position has been set
-                 * because the bot starts trading when the orderbook data starts coming
+                 * To properly boot the bot we load in order:
+                 * 1. The current position
+                 * 2. Instrument info
+                 * 3. Orders channel
+                 * 4. Orderbook channel
                  */
-                if (config['READ_INITIAL_POSITION_FROM_EXCHANGE']) {
-                    // Subscribe to the orderbook in the readPositions handler
-                    zubr.subscribe(RPC_CHANNEL_POSITIONS, bot.readPositions)
-                } else {
+                if (!config['READ_INITIAL_POSITION_FROM_EXCHANGE']) {
                     state.exchange.positionSize = config['INITIAL_POSITION']
 
-                    // Monitor the orderbook changes to add orders inbetween the spread
-                    zubr.subscribe(RPC_CHANNEL_ORDERBOOK, bot.readNewQuotes)
+                    zubr.subscribe(RPC_CHANNEL_INSTRUMENTS, bot.readInstruments)
                 }
-
-                // Monitor the orders changes
-                zubr.subscribe(RPC_CHANNEL_ORDERS, bot.readOrders)
+                else {
+                    zubr.subscribe(RPC_CHANNEL_POSITIONS, bot.readPositions)
+                }
 
                 initExitHandlers(logger, bot)
 
