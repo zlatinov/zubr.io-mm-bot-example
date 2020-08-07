@@ -4,6 +4,8 @@ const fs = require('fs').promises
 const {
     CONFIG_FILENAME,
     EXIT_CODE_AUTH_FAILED,
+    EXIT_CODE_SOCKET_ERROR,
+    EXIT_CODE_SOCKET_CLOSED,
     WS_URL_TESTNET,
     WS_ORIGIN_TESTNET,
     WS_URL_LIVE,
@@ -16,21 +18,40 @@ const {
 var ws
 var config = {}
 var state = {
+    startTime: (new Date()).getTime() / 1000,
     rpcIds: {},
     rpcHandlers: {},
-    book: {},
+    book: {
+        asks: {},
+        bids: {}
+    },
     exchange: {
         minPriceIncrement: 0,
         positionSize: 0,
-        positionSizeExchange: 0,
+        bestBid: false,
+        bestAsk: false,
         initOrders: false,
-        initBook: false,
+        initInstrument: false,
         processedOrders: {},
         orders: {},
-        ordersSent: false,
         readPositionInit: false,
+        lastOrdersPromise: false,
     },
     lastPrintInfo: 0,
+    /**
+     * Three kinds of locks for placing orders
+     * - placeNewOrders
+     *  Set to true when there's a new quote and when our orders have been filled.
+     *  Set to false when best quote is the same and new orders have been placed.
+     * - waitingForOrdersUpdates
+     *  Set to true before placing new orders or cancelling orders.
+     *  Set to false after the request has been processed.
+     * - stopTrading
+     *  True while initiating the bot and when shutting it down.
+     *  False after all WS channels are initiated.
+     */
+    placeNewOrders: false,
+    waitingForOrdersUpdates: false,
     stopTrading: true
 }
 
@@ -66,9 +87,13 @@ async function main() {
 
     ws.on('error', function (err) {
         logger.error(err.name + ' ' + err.message)
+
+        bot.exit(EXIT_CODE_SOCKET_ERROR)
     })
     ws.on('close', function (code, reason) {
         logger.error(code + ' ' + reason)
+
+        bot.exit(EXIT_CODE_SOCKET_CLOSED)
     })
 
     // Make sure to keep the connection alive with ping/pong messages
@@ -106,6 +131,7 @@ async function main() {
                 }
 
                 initExitHandlers(logger, bot)
+                setInterval(bot.printInfo, 500)
 
                 return
             }
@@ -153,23 +179,14 @@ async function main() {
 
 // On bot exit stop sending new orders and cancel all open order
 function initExitHandlers(logger, bot) {
-    function exitHandler(signal, code) {
+    async function exitHandler(signal, code) {
         if (code == 'uncaughtException') {
             console.log(signal)
 
             logger.error(signal)
         }
 
-        state.stopTrading = true
-
-        const cancellationPromise = bot.cancelAllOrders()
-        if (cancellationPromise) {
-            cancellationPromise.then(function () {
-                process.exit(code)
-            })
-        } else {
-            process.exit(code)
-        }
+        bot.exit(code)
     }
 
     // Catches ctrl+c event

@@ -14,6 +14,8 @@ const LOG_LEVEL_ERROR = 'error'
 const LOG_LEVEL_DEBUG = 'debug'
 const EXIT_CODE_AUTH_FAILED = 1
 const EXIT_CODE_INSTRUMENT_NOT_READY = 2
+const EXIT_CODE_SOCKET_ERROR = 3
+const EXIT_CODE_SOCKET_CLOSED = 4
 const WS_URL_TESTNET = 'wss://uat.zubr.io/api/v1/ws'
 const WS_ORIGIN_TESTNET = 'https://uat.zubr.io'
 const WS_URL_LIVE = 'wss://zubr.io/api/v1/ws'
@@ -48,6 +50,8 @@ module.exports = {
     LOG_LEVEL_DEBUG,
     EXIT_CODE_AUTH_FAILED,
     EXIT_CODE_INSTRUMENT_NOT_READY,
+    EXIT_CODE_SOCKET_ERROR,
+    EXIT_CODE_SOCKET_CLOSED,
     WS_URL_TESTNET,
     WS_ORIGIN_TESTNET,
     WS_URL_LIVE,
